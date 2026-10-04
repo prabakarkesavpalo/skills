@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITLE__</title>
+<style>
+:root{
+  --bg:#f6f5f1; --panel:#ffffff; --ink:#1d2127; --muted:#667080; --line:#b9c0ca; --line-strong:#7b8696;
+  --grid:#e6e3da; --accent:#2f6fed; --warn:#b45309; --shadow:0 1px 3px rgba(0,0,0,.12),0 6px 18px rgba(0,0,0,.08);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171b; --panel:#1d2229; --ink:#e7eaee; --muted:#9aa4b2; --line:#3a424d; --line-strong:#7c8797;
+    --grid:#20252c; --accent:#6c9bff; --warn:#f0b35a; --shadow:0 1px 3px rgba(0,0,0,.5),0 6px 18px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171b; --panel:#1d2229; --ink:#e7eaee; --muted:#9aa4b2; --line:#3a424d; --line-strong:#7c8797;
+  --grid:#20252c; --accent:#6c9bff; --warn:#f0b35a; --shadow:0 1px 3px rgba(0,0,0,.5),0 6px 18px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);z-index:5}
+header h1{font-size:15px;margin:0;font-weight:650;letter-spacing:.1px}
+header .sub{color:var(--muted);font-size:12px;flex-basis:100%;margin-top:-4px}
+.tabs{display:flex;gap:6px;overflow-x:auto;max-width:100%;padding:2px 0;flex:1 1 auto;scrollbar-width:thin}
+.tab{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.tools{display:flex;gap:6px;align-items:center}
+.tools input{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;width:150px}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;min-width:34px;height:32px;padding:0 10px;font:inherit;font-size:14px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+main{position:relative;flex:1;min-height:0}
+svg#cv{width:100%;height:100%;display:block;touch-action:none;cursor:grab;background:
+  radial-gradient(circle,var(--grid) 1px,transparent 1.2px) 0 0/24px 24px}
+svg#cv.drag{cursor:grabbing}
+.laneband{fill:var(--lane);fill-opacity:.07;stroke:var(--lane);stroke-opacity:.35;stroke-width:1}
+.lanelabel{fill:var(--lane);font-size:13px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+.node rect.box{fill:color-mix(in srgb,var(--lane) 10%,var(--panel));stroke:var(--lane);stroke-width:1.6}
+.node.inferred rect.box{stroke-dasharray:6 4}
+.node.unknown rect.box{stroke-dasharray:2 4;fill:var(--panel)}
+.node.legacy{opacity:.55}.node.legacy rect.box{stroke-dasharray:1 4}
+.node{cursor:pointer}
+.node:hover rect.box,.node.sel rect.box{stroke-width:3}
+.node.sel rect.box{stroke:var(--accent)}
+.node.dim,.edge.dim{opacity:.18}
+.node.hit rect.box{stroke:var(--accent);stroke-width:3.5}
+.kind{font-size:10px;fill:var(--lane);font-weight:700;letter-spacing:.6px;text-transform:uppercase}
+.lbl{font-size:13px;font-weight:650;fill:var(--ink)}
+.sum{font-size:11px;fill:var(--muted)}
+.q{font-size:12px;font-weight:800;fill:var(--warn)}
+.edge path{fill:none;stroke:var(--line-strong);stroke-width:1.5}
+.edge.async path{stroke-dasharray:7 5}
+.edge.write path{stroke:var(--accent)}
+.edge.read path{stroke-width:1.1}
+.edge.hot path{stroke:var(--accent);stroke-width:2.8}
+.edge text{font-size:11px;fill:var(--muted)}
+.edge .bg{fill:var(--bg);fill-opacity:.9}
+.card rect.box{fill:var(--panel);stroke:var(--lane);stroke-width:1.6}
+.card .hd{fill:var(--lane)}
+.card .hdt{fill:#fff;font-size:13px;font-weight:700}
+.card .fld{font-size:11.5px;fill:var(--ink)}
+.card .fty{font-size:11px;fill:var(--muted)}
+.rel path{fill:none;stroke:var(--line-strong);stroke-width:1.5}
+.rel text{font-size:11px;fill:var(--muted)}
+svg[data-zoom="mid"] .sum{display:none}
+svg[data-zoom="far"] .sum,svg[data-zoom="far"] .kind,svg[data-zoom="far"] .edge text,svg[data-zoom="far"] .edge .bg,svg[data-zoom="far"] .fty{display:none}
+svg[data-zoom="far"] .lbl{font-size:17px}
+aside{position:absolute;top:12px;right:12px;bottom:12px;width:340px;max-width:calc(100% - 24px);background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:auto;padding:14px 16px;display:none;z-index:4}
+aside.open{display:block}
+aside h2{margin:0 24px 2px 0;font-size:16px}
+aside .meta{color:var(--muted);font-size:12px;margin-bottom:10px}
+aside h3{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:14px 0 5px}
+aside p{margin:0 0 6px;white-space:pre-wrap}
+aside .x{position:absolute;top:8px;right:8px}
+aside ul{margin:0;padding:0;list-style:none}
+aside li{padding:4px 0;border-top:1px solid var(--line);font-size:13px}
+aside li:first-child{border-top:0}
+aside a,.ref{color:var(--accent);cursor:pointer;text-decoration:none}
+.ref{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;word-break:break-all}
+.note{color:var(--muted);font-size:12px}
+.badge{display:inline-block;border-radius:999px;border:1px solid var(--line);padding:0 8px;font-size:11px;margin-right:4px}
+.badge.unknown,.badge.inferred{border-color:var(--warn);color:var(--warn)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+td{padding:3px 4px;border-top:1px solid var(--line);vertical-align:top}
+td:first-child{font-family:ui-monospace,Menlo,monospace}
+footer{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding:6px 16px;background:var(--panel);border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+footer .sw{display:inline-block;width:22px;height:0;border-top:2px solid var(--line-strong);vertical-align:middle;margin-right:5px}
+footer .sw.d{border-top-style:dashed}
+footer .sw.t{border-top-style:dotted}
+#oq{position:absolute;left:12px;bottom:12px;max-width:min(460px,calc(100% - 24px));background:var(--panel);border:1px solid var(--warn);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;display:none;z-index:4}
+#oq.open{display:block}
+#oq h3{margin:0 0 6px;font-size:13px;color:var(--warn)}
+#oq li{margin:0 0 6px;font-size:13px}
+#oq ul{margin:0;padding-left:18px}
+.hint{position:absolute;left:12px;top:10px;font-size:12px;color:var(--muted);pointer-events:none;background:var(--bg);border-radius:6px;padding:2px 6px;opacity:.9}
+@media (max-width:640px){
+  aside{top:auto;left:8px;right:8px;bottom:8px;width:auto;max-height:55%}
+  .tools input{width:110px}
+  .hint{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title"></h1>
+  <div class="tools">
+    <input id="search" type="search" placeholder="Search nodes…" aria-label="Search nodes">
+    <button class="btn" id="zin" title="Zoom in" aria-label="Zoom in">+</button>
+    <button class="btn" id="zout" title="Zoom out" aria-label="Zoom out">−</button>
+    <button class="btn" id="fit" title="Fit to screen">Fit</button>
+    <button class="btn" id="oqb" title="Open questions">?</button>
+  </div>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="sub" id="sub"></div>
+</header>
+<main>
+  <svg id="cv" data-zoom="near" role="img" aria-label="Architecture canvas"><defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--line-strong)"/></marker>
+    <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+  </defs><g id="world"></g></svg>
+  <div class="hint">Drag to pan · scroll or pinch to zoom · click a box for details</div>
+  <aside id="panel" aria-live="polite"></aside>
+  <div id="oq"></div>
+</main>
+<footer>
+  <span><span class="sw"></span>sync call</span>
+  <span><span class="sw d"></span>async / queued / webhook</span>
+  <span>solid box = confirmed in code</span>
+  <span>dashed box = inferred</span>
+  <span>dotted box + ? = unknown</span>
+  <span id="gen"></span>
+</footer>
+<script>
+const MODEL = __MODEL_JSON__;
+(function(){
+"use strict";
+const M = MODEL;
+const NS = "http://www.w3.org/2000/svg";
+const $ = s => document.querySelector(s);
+const svg = $("#cv"), world = $("#world"), panel = $("#panel"), oq = $("#oq");
+const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in (a||{})) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+const NW = 220, NH = 84, COLW = 310, LPAD = 30, GAP = 20, LBLW = 40;
+const PALETTE = ["#2f6fed","#d9480f","#0b8a5f","#8f3fd1","#b7791f","#c2255c","#0c8599","#5c6370"];
+const trunc = (s, n) => { s = String(s || ""); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+const wrap = (s, n, max) => { const w = String(s || "").split(/\s+/), out = []; let cur = "";
+  for (const x of w) { if ((cur + " " + x).trim().length > n) { if (cur) out.push(cur); cur = x; } else cur = (cur + " " + x).trim(); }
+  if (cur) out.push(cur); if (out.length > max) { out.length = max; out[max-1] = trunc(out[max-1] + "…", n); } return out; };
+
+const lanes = (M.lanes || []).map((l, i) => Object.assign({ color: PALETTE[i % PALETTE.length] }, l));
+const laneById = Object.fromEntries(lanes.map(l => [l.id, l]));
+const nodes = M.nodes || [], edges = M.edges || [], entities = M.entities || [], relations = M.relations || [];
+const flows = M.flows || [];
+const nodeById = Object.fromEntries(nodes.map(n => [n.id, n]));
+const entById = Object.fromEntries(entities.map(n => [n.id, n]));
+const inFlow = (o, f) => !o.flows || o.flows.includes("*") || o.flows.includes(f);
+
+$("#title").textContent = M.title || "Architecture";
+$("#sub").textContent = M.subtitle || "";
+$("#gen").textContent = M.generated_from ? "Source: " + M.generated_from : "";
+document.title = M.title || "Architecture";
+
+const views = [{ id: "all", label: "Everything" }].concat(flows.map(f => ({ id: f.id, label: f.label })));
+if (entities.length) views.push({ id: "data", label: "Data model" });
+let view = views.length > 1 ? views[1].id : "all", selected = null, query = "";
+let T = { x: 0, y: 0, k: 1 };
+
+function applyT() {
+  world.setAttribute("transform", `translate(${T.x},${T.y}) scale(${T.k})`);
+  svg.dataset.zoom = T.k < 0.5 ? "far" : T.k < 0.85 ? "mid" : "near";
+}
+function bbox() { const b = world.getBBox(); return b.width ? b : { x: 0, y: 0, width: 800, height: 400 }; }
+function fit() {
+  const b = bbox(), r = svg.getBoundingClientRect(), pad = 40;
+  const k = Math.min((r.width - pad * 2) / b.width, (r.height - pad * 2) / b.height, 1.4);
+  T.k = Math.max(k, 0.08); T.x = (r.width - b.width * T.k) / 2 - b.x * T.k; T.y = (r.height - b.height * T.k) / 2 - b.y * T.k; applyT();
+}
+function zoomAt(px, py, f) {
+  const k = Math.min(3, Math.max(0.08, T.k * f)), real = k / T.k;
+  T.x = px - (px - T.x) * real; T.y = py - (py - T.y) * real; T.k = k; applyT();
+}
+function focusOn(x, y) {
+  const r = svg.getBoundingClientRect(); T.k = Math.max(T.k, 1);
+  const isOpen = panel.classList.contains("open"), wide = r.width > 640;
+  const freeW = r.width - (isOpen && wide ? 360 : 0), freeH = r.height - (isOpen && !wide ? panel.offsetHeight + 16 : 0);
+  T.x = freeW / 2 - x * T.k; T.y = freeH / 2 - y * T.k; applyT();
+}
+
+function layoutFlow(vis) {
+  const used = lanes.filter(l => vis.some(n => n.lane === l.id));
+  const orders = [...new Set(vis.map(n => +n.order || 0))].sort((a, b) => a - b);
+  const col = Object.fromEntries(orders.map((o, i) => [o, i]));
+  const pos = {}, bands = []; let y = 0;
+  for (const l of used) {
+    const mine = vis.filter(n => n.lane === l.id).sort((a, b) => (+a.order || 0) - (+b.order || 0));
+    const stack = {}; let rows = 1;
+    for (const n of mine) { const c = col[+n.order || 0]; stack[c] = (stack[c] || 0); n._row = stack[c]++; rows = Math.max(rows, stack[c]); }
+    const h = rows * (NH + GAP) - GAP + LPAD * 2;
+    bands.push({ lane: l, y, h });
+    for (const n of mine) pos[n.id] = { x: LBLW + 30 + col[+n.order || 0] * COLW, y: y + LPAD + n._row * (NH + GAP) };
+    y += h + 10;
+  }
+  return { pos, bands, width: LBLW + 60 + orders.length * COLW + 40 };
+}
+
+function edgePath(a, b) {
+  const x1 = a.x + NW, y1 = a.y + NH / 2, x2 = b.x, y2 = b.y + NH / 2;
+  if (x2 > x1 + 8) { const dx = Math.max(40, (x2 - x1) / 2); return [`M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`, (x1 + x2) / 2, (y1 + y2) / 2]; }
+  if (Math.abs(a.x - b.x) < 4) { const down = b.y > a.y, ya = down ? a.y + NH : a.y, yb = down ? b.y : b.y + NH, mx = a.x + NW / 2; return [`M${mx},${ya} L${mx},${yb}`, mx, (ya + yb) / 2]; }
+  const ya = a.y + NH, yb = b.y + NH, my = Math.max(ya, yb) + 26, xa = a.x + NW / 2, xb = b.x + NW / 2;
+  return [`M${xa},${ya} C${xa},${my} ${xb},${my} ${xb},${yb}`, (xa + xb) / 2, my - 6];
+}
+
+function drawFlow() {
+  const vis = nodes.filter(n => view === "all" || inFlow(n, view)); if (!vis.length) return;
+  const { pos, bands, width } = layoutFlow(vis), vset = new Set(vis.map(n => n.id));
+  for (const b of bands) {
+    const g = el("g", { style: `--lane:${b.lane.color}` }, world);
+    el("rect", { class: "laneband", x: 0, y: b.y, width, height: b.h, rx: 12 }, g);
+    const t = el("text", { class: "lanelabel", x: 18, y: b.y + b.h / 2, transform: `rotate(-90 18 ${b.y + b.h / 2})`, "text-anchor": "middle" }, g);
+    t.textContent = b.lane.label || b.lane.id;
+  }
+  const eg = el("g", {}, world);
+  edges.filter(e => vset.has(e.from) && vset.has(e.to) && (view === "all" || inFlow(e, view))).forEach(e => {
+    const [d, mx, my] = edgePath(pos[e.from], pos[e.to]);
+    const g = el("g", { class: "edge " + (e.kind || "call") + (e.async ? " async" : ""), "data-from": e.from, "data-to": e.to }, eg);
+    el("path", { d, "marker-end": e.kind === "write" ? "url(#ahb)" : "url(#ah)" }, g);
+    if (e.label) {
+      const lab = trunc(e.label, 30), w = lab.length * 6 + 10;
+      el("rect", { class: "bg", x: mx - w / 2, y: my - 9, width: w, height: 16, rx: 4 }, g);
+      const t = el("text", { x: mx, y: my + 3, "text-anchor": "middle" }, g); t.textContent = lab;
+    }
+  });
+  const ng = el("g", {}, world);
+  vis.forEach(n => {
+    const p = pos[n.id], lane = laneById[n.lane] || { color: PALETTE[7] };
+    const g = el("g", { class: "node " + (n.status || "confirmed"), "data-id": n.id, style: `--lane:${lane.color}`, transform: `translate(${p.x},${p.y})` }, ng);
+    el("rect", { class: "box", width: NW, height: NH, rx: 10 }, g);
+    const k = el("text", { class: "kind", x: 12, y: 18 }, g); k.textContent = n.kind || "";
+    if (n.status === "unknown") { const q = el("text", { class: "q", x: NW - 16, y: 18 }, g); q.textContent = "?"; }
+    const l = el("text", { class: "lbl", x: 12, y: 38 }, g); l.textContent = trunc(n.label, 27);
+    wrap(n.summary, 36, 2).forEach((s, i) => { const t = el("text", { class: "sum", x: 12, y: 56 + i * 14 }, g); t.textContent = s; });
+    n._p = p;
+  });
+}
+
+function drawData() {
+  const per = Math.ceil(Math.sqrt(entities.length * 1.4)), CW = 270, GX = 90, GY = 50, rowH = [], pos = {};
+  entities.forEach((e, i) => { const r = Math.floor(i / per); const h = 40 + Math.min(e.fields ? e.fields.length : 0, 12) * 17 + 12; rowH[r] = Math.max(rowH[r] || 0, h); });
+  entities.forEach((e, i) => { const r = Math.floor(i / per), c = i % per; let y = 0; for (let j = 0; j < r; j++) y += rowH[j] + GY; pos[e.id] = { x: c * (CW + GX), y, w: CW, h: 40 + Math.min(e.fields ? e.fields.length : 0, 12) * 17 + 12 }; });
+  const rg = el("g", {}, world);
+  relations.forEach(r => {
+    const a = pos[r.from], b = pos[r.to]; if (!a || !b) return;
+    const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
+    const clip = (p, tx, ty) => { const cx = p.x + p.w / 2, cy = p.y + p.h / 2, dx = tx - cx, dy = ty - cy; const s = Math.min(dx ? (p.w / 2) / Math.abs(dx) : 1e9, dy ? (p.h / 2) / Math.abs(dy) : 1e9); return [cx + dx * s, cy + dy * s]; };
+    const [x1, y1] = clip(a, bx, by), [x2, y2] = clip(b, ax, ay);
+    const g = el("g", { class: "rel" }, rg);
+    el("path", { d: `M${x1},${y1} L${x2},${y2}`, "marker-end": "url(#ah)" }, g);
+    const lab = [r.label, r.cardinality].filter(Boolean).join("  ");
+    if (lab) { const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, w = lab.length * 6 + 10; el("rect", { class: "bg", x: mx - w / 2, y: my - 9, width: w, height: 16, rx: 4, fill: "var(--bg)", "fill-opacity": ".9" }, g); const t = el("text", { x: mx, y: my + 3, "text-anchor": "middle" }, g); t.textContent = lab; }
+  });
+  entities.forEach(e => {
+    const p = pos[e.id], lane = laneById[e.lane] || { color: PALETTE[7], label: "" };
+    const g = el("g", { class: "node card " + (e.status || "confirmed"), "data-id": e.id, style: `--lane:${lane.color}`, transform: `translate(${p.x},${p.y})` }, world);
+    el("rect", { class: "box", width: p.w, height: p.h, rx: 8 }, g);
+    el("path", { class: "hd", d: `M0,8 a8,8 0 0 1 8,-8 h${p.w - 16} a8,8 0 0 1 8,8 v22 h-${p.w} z` }, g);
+    const t = el("text", { class: "hdt", x: 12, y: 20 }, g); t.textContent = trunc(e.label, 30);
+    (e.fields || []).slice(0, 12).forEach((f, i) => {
+      const a = el("text", { class: "fld", x: 12, y: 54 + i * 17 }, g); a.textContent = trunc(f.name, 18);
+      const b = el("text", { class: "fty", x: p.w - 12, y: 54 + i * 17, "text-anchor": "end" }, g); b.textContent = trunc(f.type || "", 20);
+    });
+    if ((e.fields || []).length > 12) { const m = el("text", { class: "fty", x: 12, y: 54 + 12 * 17 }, g); m.textContent = "+" + (e.fields.length - 12) + " more"; }
+    e._p = { x: p.x, y: p.y };
+  });
+}
+
+function draw() {
+  world.replaceChildren(); view === "data" ? drawData() : drawFlow(); applyQuery(); markSel(); fit();
+}
+function applyQuery() {
+  const q = query.trim().toLowerCase();
+  world.querySelectorAll(".node").forEach(g => {
+    const o = nodeById[g.dataset.id] || entById[g.dataset.id];
+    const hay = [o.label, o.kind, o.summary, o.details, (o.refs || []).map(r => r.path).join(" ")].join(" ").toLowerCase();
+    const hit = q && hay.includes(q);
+    g.classList.toggle("hit", !!hit); g.classList.toggle("dim", !!q && !hit);
+  });
+  world.querySelectorAll(".edge").forEach(g => g.classList.toggle("dim", !!q));
+}
+function markSel() {
+  world.querySelectorAll(".node").forEach(g => g.classList.toggle("sel", g.dataset.id === selected));
+  world.querySelectorAll(".edge").forEach(g => g.classList.toggle("hot", !!selected && (g.dataset.from === selected || g.dataset.to === selected)));
+}
+function refsHtml(refs) {
+  if (!refs || !refs.length) return "<p class='note'>No code reference recorded.</p>";
+  return "<ul>" + refs.map(r => `<li><span class="ref" data-copy="${esc(r.path + (r.line ? ":" + r.line : ""))}" title="Click to copy">${esc(r.path)}${r.line ? ":" + r.line : ""}</span>${r.note ? `<div class="note">${esc(r.note)}</div>` : ""}</li>`).join("") + "</ul>";
+}
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function linkList(list, key, other) {
+  if (!list.length) return "<p class='note'>none</p>";
+  return "<ul>" + list.map(e => { const id = e[other], n = nodeById[id]; return `<li><a data-go="${esc(id)}">${esc(n ? n.label : id)}</a>${e.label ? ` <span class="note">— ${esc(e.label)}${e.async ? " (async)" : ""}</span>` : ""}</li>`; }).join("") + "</ul>";
+}
+function select(id, type) {
+  selected = id; const o = type === "entity" ? entById[id] : nodeById[id]; if (!o) return;
+  const lane = laneById[o.lane] || {};
+  let h = `<button class="btn x" data-close aria-label="Close">×</button><h2>${esc(o.label)}</h2>
+    <div class="meta"><span class="badge">${esc(o.kind || (type === "entity" ? "table" : ""))}</span><span class="badge ${esc(o.status || "confirmed")}">${esc(o.status || "confirmed")}</span> ${esc(lane.label || "")}</div>`;
+  if (o.summary) h += `<p>${esc(o.summary)}</p>`;
+  if (o.details) h += `<h3>Details</h3><p>${esc(o.details)}</p>`;
+  if (type === "entity") {
+    if (o.fields && o.fields.length) h += `<h3>Fields</h3><table>${o.fields.map(f => `<tr><td>${esc(f.name)}</td><td>${esc(f.type || "")}${f.note ? `<div class="note">${esc(f.note)}</div>` : ""}</td></tr>`).join("")}</table>`;
+    const rel = relations.filter(r => r.from === id || r.to === id);
+    if (rel.length) h += `<h3>Relations</h3><ul>${rel.map(r => { const other = r.from === id ? r.to : r.from; const oe = entById[other]; return `<li>${r.from === id ? "→" : "←"} <a data-go="${esc(other)}" data-type="entity">${esc(oe ? oe.label : other)}</a> <span class="note">${esc([r.label, r.cardinality].filter(Boolean).join(" · "))}</span></li>`; }).join("")}</ul>`;
+    const touching = edges.filter(e => (e.data || []).includes(id));
+    if (touching.length) h += `<h3>Touched by</h3><ul>${touching.map(e => `<li><a data-go="${esc(e.from)}">${esc((nodeById[e.from] || {}).label || e.from)}</a> <span class="note">${esc(e.label || "")}</span></li>`).join("")}</ul>`;
+  } else {
+    const vis = edges.filter(e => view === "all" || inFlow(e, view));
+    h += `<h3>Calls / writes to</h3>${linkList(vis.filter(e => e.from === id), "from", "to")}<h3>Called / triggered by</h3>${linkList(vis.filter(e => e.to === id), "to", "from")}`;
+  }
+  h += `<h3>Where in the code</h3>${refsHtml(o.refs)}`;
+  panel.innerHTML = h; panel.classList.add("open"); markSel();
+  if (o._p) focusOn(o._p.x + NW / 2, o._p.y + NH / 2);
+}
+panel.addEventListener("click", ev => {
+  const t = ev.target;
+  if (t.dataset.close !== undefined) { panel.classList.remove("open"); selected = null; markSel(); }
+  else if (t.dataset.go) { const id = t.dataset.go, ent = !!entById[id] && !nodeById[id]; if (ent && view !== "data") { setView("data"); } select(id, ent ? "entity" : "node"); }
+  else if (t.dataset.copy && navigator.clipboard) { navigator.clipboard.writeText(t.dataset.copy).then(() => { const o = t.textContent; t.textContent = "copied"; setTimeout(() => t.textContent = o, 700); }); }
+});
+
+function buildTabs() {
+  const box = $("#tabs"); box.replaceChildren();
+  views.forEach(v => {
+    const b = document.createElement("button"); b.className = "tab"; b.textContent = v.label; b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", v.id === view); b.onclick = () => setView(v.id); box.appendChild(b);
+  });
+}
+function setView(v) { view = v; selected = null; panel.classList.remove("open"); buildTabs(); draw(); }
+
+const oqs = M.open_questions || [];
+if (!oqs.length) $("#oqb").style.display = "none";
+oq.innerHTML = `<h3>Open questions — not confirmed from code</h3><ul>${oqs.map(q => `<li>${esc(q.text || q)}${q.refs ? ` <span class="ref">${esc(q.refs.join(", "))}</span>` : ""}</li>`).join("")}</ul>`;
+$("#oqb").onclick = () => oq.classList.toggle("open");
+
+let moved = false; const ptrs = new Map(); let last = 0, startPt = null;
+svg.addEventListener("pointerdown", e => {
+  svg.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = false; startPt = { x: e.clientX, y: e.clientY };
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; last = Math.hypot(a.x - b.x, a.y - b.y); }
+  svg.classList.add("drag");
+});
+svg.addEventListener("pointermove", e => {
+  if (!ptrs.has(e.pointerId)) return;
+  const p = ptrs.get(e.pointerId), r = svg.getBoundingClientRect();
+  if (ptrs.size === 1) { T.x += e.clientX - p.x; T.y += e.clientY - p.y; if (Math.hypot(e.clientX - startPt.x, e.clientY - startPt.y) > 5) moved = true; applyT(); }
+  else if (ptrs.size === 2) {
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+    if (last) zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, d / last); last = d; moved = true; return;
+  }
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+});
+const up = e => { ptrs.delete(e.pointerId); last = 0; if (!ptrs.size) { svg.classList.remove("drag"); setTimeout(() => moved = false, 0); } };
+svg.addEventListener("pointerup", up); svg.addEventListener("pointercancel", up);
+svg.addEventListener("wheel", e => { e.preventDefault(); const r = svg.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0016))); }, { passive: false });
+svg.addEventListener("dblclick", e => { const r = svg.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, 1.6); });
+svg.addEventListener("click", e => {
+  if (moved) return;
+  // pointer capture (needed for dragging) retargets clicks to the svg, so look up the box under the pointer
+  const hit = document.elementFromPoint(e.clientX, e.clientY), g = hit && hit.closest ? hit.closest(".node") : null;
+  if (g) select(g.dataset.id, g.classList.contains("card") ? "entity" : "node");
+  else if (selected) { panel.classList.remove("open"); selected = null; markSel(); }
+});
+const ctr = f => { const r = svg.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, f); };
+$("#zin").onclick = () => ctr(1.3); $("#zout").onclick = () => ctr(1 / 1.3); $("#fit").onclick = fit;
+$("#search").addEventListener("input", e => { query = e.target.value; applyQuery(); });
+$("#search").addEventListener("keydown", e => { if (e.key === "Enter") { const h = world.querySelector(".node.hit"); if (h) { const o = nodeById[h.dataset.id] || entById[h.dataset.id]; if (o._p) focusOn(o._p.x + NW / 2, o._p.y + NH / 2); } } });
+window.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  const s = 80; if (e.key === "ArrowLeft") T.x += s; else if (e.key === "ArrowRight") T.x -= s; else if (e.key === "ArrowUp") T.y += s; else if (e.key === "ArrowDown") T.y -= s;
+  else if (e.key === "+" || e.key === "=") ctr(1.2); else if (e.key === "-") ctr(1 / 1.2); else if (e.key === "0") fit(); else if (e.key === "Escape") { panel.classList.remove("open"); oq.classList.remove("open"); selected = null; markSel(); return; } else return;
+  applyT();
+});
+window.addEventListener("resize", () => fit());
+buildTabs(); draw();
+})();
+</script>
+</body>
+</html>

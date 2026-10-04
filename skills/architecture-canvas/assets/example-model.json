@@ -1,0 +1,74 @@
+{
+  "title": "Example: generic SaaS upload architecture",
+  "subtitle": "Illustrative sample for testing the canvas. It is not a real app; every box below is made up.",
+  "generated_from": "illustrative example (no real repo)",
+  "lanes": [
+    {"id": "client", "label": "Browser"},
+    {"id": "backend", "label": "Backend API"},
+    {"id": "storage", "label": "Object storage"},
+    {"id": "workers", "label": "Workers"},
+    {"id": "external", "label": "External services"}
+  ],
+  "flows": [
+    {"id": "signup", "label": "Sign up", "description": "New user creates an account"},
+    {"id": "pay", "label": "Pay", "description": "User upgrades to a paid plan"},
+    {"id": "guest", "label": "Guest pass", "description": "Anonymous visitor gets limited access"},
+    {"id": "upload", "label": "Upload a file", "description": "File goes to storage and is processed"}
+  ],
+  "nodes": [
+    {"id": "ui_signup", "label": "Sign-up form", "lane": "client", "kind": "ui", "flows": ["signup"], "order": 1, "summary": "Collects email and password.", "refs": [{"path": "web/src/SignUp.tsx", "line": 12}], "status": "confirmed"},
+    {"id": "auth_signup", "label": "auth.signUp", "lane": "backend", "kind": "mutation", "flows": ["signup"], "order": 2, "summary": "Creates the user row and a session.", "details": "Also creates the default workspace so every user has somewhere to put files.", "refs": [{"path": "api/auth.ts", "line": 40, "note": "inserts into users, then workspaces"}], "status": "confirmed"},
+    {"id": "email", "label": "Email provider", "lane": "external", "kind": "external", "flows": ["signup"], "order": 3, "summary": "Sends the welcome email.", "status": "inferred"},
+
+    {"id": "ui_checkout", "label": "Upgrade button", "lane": "client", "kind": "ui", "flows": ["pay"], "order": 1, "summary": "Opens the hosted checkout page.", "refs": [{"path": "web/src/Upgrade.tsx", "line": 8}], "status": "confirmed"},
+    {"id": "billing_session", "label": "billing.createCheckout", "lane": "backend", "kind": "action", "flows": ["pay"], "order": 2, "summary": "Asks the payment provider for a checkout URL.", "refs": [{"path": "api/billing.ts", "line": 22}], "status": "confirmed"},
+    {"id": "payments", "label": "Payment provider", "lane": "external", "kind": "external", "flows": ["pay"], "order": 3, "summary": "Hosted checkout and subscription state.", "status": "confirmed", "refs": [{"path": "api/billing.ts", "line": 31}]},
+    {"id": "billing_hook", "label": "POST /webhooks/billing", "lane": "backend", "kind": "http", "flows": ["pay"], "order": 4, "summary": "Receives payment events and sets the plan.", "refs": [{"path": "api/http.ts", "line": 17}], "status": "confirmed"},
+
+    {"id": "ui_guest", "label": "Try without account", "lane": "client", "kind": "ui", "flows": ["guest"], "order": 1, "summary": "Starts an anonymous session.", "status": "inferred"},
+    {"id": "guest_pass", "label": "guest.create", "lane": "backend", "kind": "mutation", "flows": ["guest"], "order": 2, "summary": "Issues a pass with a small quota. What happens to it on sign-up is unclear.", "status": "unknown"},
+
+    {"id": "ui_upload", "label": "Upload dropzone", "lane": "client", "kind": "ui", "flows": ["upload", "guest"], "order": 1, "summary": "Asks for an upload URL, then PUTs the file.", "refs": [{"path": "web/src/Dropzone.tsx", "line": 30}], "status": "confirmed"},
+    {"id": "upload_url", "label": "files.createUploadUrl", "lane": "backend", "kind": "mutation", "flows": ["upload"], "order": 2, "summary": "Checks plan and quota, returns a signed URL.", "refs": [{"path": "api/files.ts", "line": 55}], "status": "confirmed"},
+    {"id": "bucket", "label": "uploads bucket", "lane": "storage", "kind": "bucket", "flows": ["upload"], "order": 3, "summary": "Raw files, keyed by workspace and file id.", "status": "confirmed", "refs": [{"path": "api/files.ts", "line": 61}]},
+    {"id": "files_done", "label": "files.markUploaded", "lane": "backend", "kind": "mutation", "flows": ["upload"], "order": 4, "summary": "Creates the file row and enqueues processing.", "refs": [{"path": "api/files.ts", "line": 80}], "status": "confirmed"},
+    {"id": "queue", "label": "processing queue", "lane": "workers", "kind": "queue", "flows": ["upload"], "order": 5, "summary": "Holds jobs until a worker is free.", "status": "inferred"},
+    {"id": "worker_extract", "label": "extract_text", "lane": "workers", "kind": "worker", "flows": ["upload"], "order": 6, "summary": "Parses the file and writes chunks.", "refs": [{"path": "workers/extract.py", "line": 14}], "status": "confirmed"},
+    {"id": "files_ready", "label": "files.setReady", "lane": "backend", "kind": "mutation", "flows": ["upload"], "order": 7, "summary": "Worker calls back; file row becomes ready.", "refs": [{"path": "api/files.ts", "line": 112}], "status": "confirmed"}
+  ],
+  "edges": [
+    {"from": "ui_signup", "to": "auth_signup", "label": "email + password", "flows": ["signup"]},
+    {"from": "auth_signup", "to": "email", "label": "welcome email", "flows": ["signup"], "async": true},
+
+    {"from": "ui_checkout", "to": "billing_session", "label": "plan id", "flows": ["pay"]},
+    {"from": "billing_session", "to": "payments", "label": "create checkout", "flows": ["pay"]},
+    {"from": "payments", "to": "billing_hook", "label": "payment succeeded", "flows": ["pay"], "async": true},
+
+    {"from": "ui_guest", "to": "guest_pass", "label": "start session", "flows": ["guest"]},
+    {"from": "guest_pass", "to": "ui_upload", "label": "pass id", "flows": ["guest"]},
+
+    {"from": "ui_upload", "to": "upload_url", "label": "name, size, type", "flows": ["upload"]},
+    {"from": "upload_url", "to": "bucket", "label": "sign PUT url", "flows": ["upload"], "kind": "write"},
+    {"from": "ui_upload", "to": "bucket", "label": "PUT file bytes", "flows": ["upload"], "kind": "write"},
+    {"from": "bucket", "to": "files_done", "label": "client confirms", "flows": ["upload"], "async": true},
+    {"from": "files_done", "to": "queue", "label": "enqueue job", "flows": ["upload"], "async": true, "data": ["files"]},
+    {"from": "queue", "to": "worker_extract", "label": "job payload", "flows": ["upload"], "async": true},
+    {"from": "worker_extract", "to": "files_ready", "label": "HTTP callback", "flows": ["upload"], "async": true, "data": ["chunks"]}
+  ],
+  "entities": [
+    {"id": "users", "label": "users", "lane": "backend", "refs": [{"path": "api/schema.ts", "line": 5}], "fields": [{"name": "email", "type": "string"}, {"name": "plan", "type": "free | pro"}]},
+    {"id": "workspaces", "label": "workspaces", "lane": "backend", "refs": [{"path": "api/schema.ts", "line": 14}], "fields": [{"name": "ownerId", "type": "id(users)"}, {"name": "name", "type": "string"}]},
+    {"id": "files", "label": "files", "lane": "backend", "refs": [{"path": "api/schema.ts", "line": 22}], "fields": [{"name": "workspaceId", "type": "id(workspaces)"}, {"name": "objectKey", "type": "string", "note": "key in the uploads bucket"}, {"name": "status", "type": "uploading | processing | ready | failed"}]},
+    {"id": "chunks", "label": "chunks", "lane": "backend", "refs": [{"path": "api/schema.ts", "line": 33}], "fields": [{"name": "fileId", "type": "id(files)"}, {"name": "text", "type": "string"}]},
+    {"id": "guest_passes", "label": "guest_passes", "lane": "backend", "status": "unknown", "summary": "Not found in the schema in this made-up example.", "fields": [{"name": "quota", "type": "number"}]}
+  ],
+  "relations": [
+    {"from": "workspaces", "to": "users", "label": "owner", "cardinality": "N:1"},
+    {"from": "files", "to": "workspaces", "label": "belongs to", "cardinality": "N:1"},
+    {"from": "chunks", "to": "files", "label": "belongs to", "cardinality": "N:1"}
+  ],
+  "open_questions": [
+    {"text": "What happens to a guest pass and its files when the guest signs up?"},
+    {"text": "Is the processing queue a managed queue or a table polled by the worker?", "refs": ["workers/extract.py:14"]}
+  ]
+}
