@@ -15,6 +15,7 @@ Personal Claude Code skills. One folder per skill in `skills/<name>/SKILL.md`
 | `gen-e2-template-conversion` | Move a repo to the Gen-e2 layout, add `.loop/`, stay lint-clean |
 | `tutorial-to-concept-checklist` | Course video to app, concept checklist, mobile HTML, canvas |
 | `sprint-review-demo-video` | Small narrated demo video with Playwright, `say`, ffmpeg |
+| `first-ai-agent-onboarding` | Build a first AI agent end to end: one job, base LLM, tools, loop, memory, interface |
 
 ## Maintain
 
