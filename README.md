@@ -23,6 +23,7 @@ Personal Claude Code skills. One folder per skill in `skills/<name>/SKILL.md`
 | `stock-news-timeline` | Timeline of news and price impact for any stocks or IBKR holdings, with your trades overlaid |
 | `casual-pro-writer` | Messages and emails to a manager or client in a casual, human tone |
 | `casual-tone-prompt` | Ready-to-paste prompt that makes any writing sound casual and not AI-written |
+| `gen-e2-app-from-template` | Build a demoable app from the Gen-e2 project template: docs + OpenAPI first, Express/React, JSON file DB, tests per AC, sprint demo MP4 |
 
 ## Maintain
 
