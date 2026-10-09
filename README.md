@@ -20,6 +20,7 @@ Personal Claude Code skills. One folder per skill in `skills/<name>/SKILL.md`
 | `architecture-flow-mapper` | Trace real user flows in a codebase into a grounded architecture model with file:line refs |
 | `daily-newspaper` | Build the one-page 8am morning newspaper (tech, Hermes/Claude, Indian markets) |
 | `notes-to-infographic` | Turn notes, transcripts or reports into a one-page portrait infographic PNG |
+| `stock-news-timeline` | Timeline of news and price impact for any stocks or IBKR holdings, with your trades overlaid |
 
 ## Maintain
 
