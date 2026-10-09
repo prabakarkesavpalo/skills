@@ -21,6 +21,8 @@ Personal Claude Code skills. One folder per skill in `skills/<name>/SKILL.md`
 | `daily-newspaper` | Build the one-page 8am morning newspaper (tech, Hermes/Claude, Indian markets) |
 | `notes-to-infographic` | Turn notes, transcripts or reports into a one-page portrait infographic PNG |
 | `stock-news-timeline` | Timeline of news and price impact for any stocks or IBKR holdings, with your trades overlaid |
+| `casual-pro-writer` | Messages and emails to a manager or client in a casual, human tone |
+| `casual-tone-prompt` | Ready-to-paste prompt that makes any writing sound casual and not AI-written |
 
 ## Maintain
 
